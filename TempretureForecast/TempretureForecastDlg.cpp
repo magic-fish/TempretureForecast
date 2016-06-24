@@ -6,12 +6,18 @@
 #include "TempretureForecast.h"
 #include "TempretureForecastDlg.h"
 #include "afxdialogex.h"
+#include "TempData.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #define POINT_COUNT 48
-#define TIMER_DRAW 1
-#define TIMER_COLLECT 2
+#define TIMER_1S 0
+#define TIMER_10S 1
+#define TIMER_30S 2
+#define TIMER_1M 3
+#define TIMER_10M 4
+#define TIMER_30M 5
+#define TIMER_1H 6
 #endif
 
 
@@ -63,6 +69,9 @@ void CTempretureForecastDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_TIMEANDTEMP, m_dateAndCurTempreture);
 	DDX_Text(pDX, IDC_EDIT_MAXTEMP, m_MaxTemp);
 	DDX_Text(pDX, IDC_EDIT_MINTEMP, m_MinTemp);
+	DDX_Control(pDX, IDC_COMBO_ALARM, m_highTempAlarm);
+	DDX_Control(pDX, IDC_COMBO_COLLECTINTERVAL, m_collectInterval);
+	DDX_Control(pDX, IDC_COMBO_FORECASTALG, m_forecastAlgorithm);
 }
 
 BEGIN_MESSAGE_MAP(CTempretureForecastDlg, CDialogEx)
@@ -71,6 +80,10 @@ BEGIN_MESSAGE_MAP(CTempretureForecastDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_WM_TIMER()
 	ON_WM_CLOSE()
+//	ON_WM_COPYDATA()
+ON_CBN_SELCHANGE(IDC_COMBO_ALARM, &CTempretureForecastDlg::OnCbnSelchangeComboAlarm)
+ON_CBN_SELCHANGE(IDC_COMBO_COLLECTINTERVAL, &CTempretureForecastDlg::OnCbnSelchangeComboCollectinterval)
+ON_CBN_SELCHANGE(IDC_COMBO_FORECASTALG, &CTempretureForecastDlg::OnCbnSelchangeComboForecastalg)
 END_MESSAGE_MAP()
 
 
@@ -106,21 +119,21 @@ BOOL CTempretureForecastDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO:  在此添加额外的初始化代码
-
+	InitComboBox();
 	//获得客户区
-	//m_bgPic.GetClientRect(&m_rect);
 	m_bgPic.GetClientRect(m_rect);
 	//创建兼容DC
 	m_memDC.CreateCompatibleDC(m_bgPic.GetDC());
 	//创建兼容bitmap
 	m_bmp.CreateCompatibleBitmap(m_bgPic.GetDC(), m_rect.Width(), m_rect.Height());
     m_memDC.SelectObject(&m_bmp);
-
+ 
+	m_displayer.Init(m_rect);
 	// 以时间为种子来构造随机数生成器   
 	srand((unsigned)time(NULL));
 	// 启动定时器，ID为1，定时时间为200ms   
-	SetTimer(TIMER_DRAW, 200, NULL);
-	SetTimer(TIMER_COLLECT, 3600000, NULL);
+	SetTimer(TIMER_1S, 1000, NULL);
+	m_curTimerID = TIMER_1S;
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -178,164 +191,29 @@ HCURSOR CTempretureForecastDlg::OnQueryDragIcon()
 
 void CTempretureForecastDlg::OnTimer(UINT_PTR nIDEvent)
 {
-	// TODO:  在此添加消息处理程序代码和/或调用默认值
-	// 将数组中的所有元素前移一个单位，第一个元素丢弃   
-	for (int i = 0; i<POINT_COUNT - 1; i++)
-	{
-		m_waveDataValues[i] = m_waveDataValues[i + 1];
-	}
-	// 为最后一个元素赋一个50以内的随机数值（整型）   
-	m_waveDataValues[POINT_COUNT - 1] = rand() % 50 + 1;
-
+	// TODO:  在此添加消息处理程序代码和/或调用默认值  
+	CTempData data;
+	GetLocalTime(&data.m_date);
+	data.m_tempreture = rand() % 50 + 1;
+	m_displayer.AddData(data);
 	//绘制坐标系
-	DrawCoordinate(&m_memDC, m_rect);
+	//DrawCoordinate(&m_memDC, m_rect);
+	m_displayer.DrawCoordinate(&m_memDC,m_rect);
 	// 绘制波形图   
-	DrawWave(&m_memDC, m_rect);
-
+	//DrawWave(&m_memDC, m_rect);
+	m_displayer.DrawGraph(&m_memDC);
 	// 显示当前的最高温度和最低温度
 	m_numOfTemp = POINT_COUNT;
-	//GetMaxAndMinTemp();
+	GetMaxAndMinTemp();
 
 	// 显示当前时间和实时温度
-	m_dateAndCurTempreture = GetCurTime() + GetCurTemp(m_waveDataValues[POINT_COUNT - 1]);
+	m_dateAndCurTempreture = GetCurTime() + GetCurTemp(data.m_tempreture);
 	//将缓冲DC画到实际的窗口上
 	m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
+	//if (data.m_tempreture>=m_alarmValue)
+		//AfxMessageBox(_T("高温警报！！"));
 	UpdateData(FALSE);
 	CDialogEx::OnTimer(nIDEvent);
-}
-
-
-void CTempretureForecastDlg::DrawCoordinate(CDC *pDC, CRect& rect)
-{
-	CPen dotPen;      // 用于创建点线画笔   
-	CPen solidPen;     // 用于创建实心画笔
-	CPen *pOldPen;     // 用于存放旧画笔     
-	CBrush newBrush;   // 用于创建新画刷   
-	CBrush *pOldBrush; // 用于存放旧画刷   
-	CRect codrect;
-	codrect.bottom = rect.bottom - 50;
-	codrect.top = rect.top + 20;
-	codrect.left = rect.left + 50;
-	codrect.right = rect.right - 20;
-	// 创建灰色新画刷   
-	newBrush.CreateSolidBrush(RGB(240, 240, 240));
-	// 选择新画刷，并将旧画刷的指针保存到pOldBrush   
-	pOldBrush = pDC->SelectObject(&newBrush);
-	// 以黑色画刷为绘图控件填充黑色，形成黑色背景   
-	pDC->Rectangle(rect);
-	// 恢复旧画刷   
-	pDC->SelectObject(pOldBrush);
-	// 删除新画刷   
-	newBrush.DeleteObject();
-
-	// 创建实心画笔，粗度为2，颜色为黑色   
-	solidPen.CreatePen(PS_SOLID, 2, RGB(0, 0, 0));
-	// 创建点线画笔，粗度为1，颜色为蓝色
-	dotPen.CreatePen(PS_DOT, 1, RGB(0, 0, 255));
-	// 选择新画笔，并将旧画笔的指针保存到pOldPen   
-	pOldPen = pDC->SelectObject(&solidPen);
-	//pDC->Rectangle(m_rect);
-	//绘制Y轴   
-	pDC->MoveTo(codrect.left, codrect.bottom);
-	pDC->LineTo(codrect.left, codrect.top);
-	//绘制箭头
-	pDC->LineTo(codrect.left - 4, codrect.top + 4);
-	pDC->MoveTo(codrect.left, codrect.top);
-	pDC->LineTo(codrect.left + 4, codrect.top + 4);
-
-	//绘制X轴
-	pDC->MoveTo(codrect.left, codrect.bottom);
-	pDC->LineTo(codrect.right, codrect.bottom);
-	//绘制箭头
-	pDC->LineTo(codrect.right - 4, codrect.bottom - 4);
-	pDC->MoveTo(codrect.right, codrect.bottom);
-	pDC->LineTo(codrect.right - 4, codrect.bottom + 4);
-
-
-	//绘制网格和刻度
-	pOldPen = pDC->SelectObject(&dotPen);
-	int xlength = codrect.right - codrect.left;
-	int ylength = codrect.bottom - codrect.top;
-	int xavlength = (codrect.right - codrect.left) / 2;
-	int yavlength = ylength / 10;
-	for (int i = 1; i <= 10; i++)
-	{
-		CString scale;
-		scale.Format(_T("%d"), i * 5);
-		if (i == 1)
-			pDC->TextOutW(codrect.left - 20, codrect.bottom, _T("0"));
-		pDC->TextOutW(codrect.left - 20, codrect.bottom - yavlength*i, scale);
-		pDC->MoveTo(codrect.left, codrect.bottom - yavlength*i);
-		pDC->LineTo(codrect.right, codrect.bottom - yavlength*i);
-	}
-	//显示连续两个小时的温度，前一个小时是采集到的，后一个小时是预测的
-	for (int i = 0; i <2; i++)
-	{
-		CString strTime = this->GetCurTime();
-		strTime = strTime.Mid(strTime.GetLength() - 3, 2);
-		int intTime = _ttoi(strTime) + i;
-		strTime.Format(_T("%d"), intTime);
-		pDC->TextOutW(codrect.left + i*xavlength, codrect.bottom + 10, strTime);
-	}
-
-	//绘制X/Y轴标识
-	pDC->TextOutW(codrect.left - 40, codrect.bottom - yavlength * 5, _T("温"));
-	pDC->TextOutW(codrect.left - 40, codrect.bottom - yavlength * 5 + 15, _T("度"));
-
-	pDC->TextOutW(codrect.left + xavlength, codrect.bottom + 30, _T("时间"));
-	//AfxMessageBox(_T("SDS"));
-	//InvalidateRect(rectPicture);
-	// 恢复旧画笔   
-	pDC->SelectObject(pOldPen);
-	// 删除新画笔   
-	newBrush.DeleteObject();
-	solidPen.DeleteObject();
-	dotPen.DeleteObject();
-}
-
-
-void CTempretureForecastDlg::DrawWave(CDC *pDC, CRect &rect)
-{
-	float fDeltaX;     // x轴相邻两个绘图点的坐标距离   
-	float fDeltaY;     // y轴每个逻辑单位对应的坐标值   
-	int nX;      // 在连线时用于存储绘图点的横坐标   
-	int nY;      // 在连线时用于存储绘图点的纵坐标   
-	CPen newPen;       // 用于创建新画笔   
-	CPen *pOldPen;     // 用于存放旧画笔   
-
-	CRect codrect;    //坐标系矩形区域
-	codrect.bottom = rect.bottom - 50;
-	codrect.top = rect.top + 20;
-	codrect.left = rect.left + 50;
-	codrect.right = rect.right - 20;
-
-	// 计算fDeltaX和fDeltaY   
-	fDeltaX = (float)codrect.Width() / (POINT_COUNT - 1);
-	fDeltaY = (float)codrect.Height() / 50;
-
-
-
-	// 创建实心画笔，粗度为1，颜色为绿色   
-	newPen.CreatePen(PS_SOLID, 2, RGB(0, 255, 0));
-	// 选择新画笔，并将旧画笔的指针保存到pOldPen   
-	pOldPen = pDC->SelectObject(&newPen);
-
-	// 将当前点移动到绘图控件窗口的左下角，以此为波形的起始点   
-	pDC->MoveTo(codrect.left, codrect.bottom);
-	// 计算m_nzValues数组中每个点对应的坐标位置，并依次连接，最终形成曲线   
-	for (int i = 0; i<POINT_COUNT; i++)
-	{
-		nX = codrect.left + (int)(i * fDeltaX);
-		nY = codrect.bottom - (int)(m_waveDataValues[i] * fDeltaY);
-		if (m_waveDataValues[i] == 0)
-			pDC->MoveTo(nX, nY);
-		else
-			pDC->LineTo(nX, nY);
-	}
-	// 恢复旧画笔   
-	pDC->SelectObject(pOldPen);
-	// 删除新画笔   
-	newPen.DeleteObject();
 }
 
 
@@ -354,8 +232,7 @@ void CTempretureForecastDlg::OnClose()
 
 	m_memDC.DeleteDC();        //删除DC
 	m_bmp.DeleteObject();      //删除位图
-	KillTimer(TIMER_DRAW);
-	KillTimer(TIMER_COLLECT);
+	KillTimer(m_curTimerID);
 	CDialogEx::OnClose();
 }
 
@@ -377,4 +254,91 @@ CString CTempretureForecastDlg::GetCurTemp(int currTemp)
 	str.Format(_T("%d"), currTemp);
 	str = _T("实时温度：") + str + _T("℃");
 	return str;
+}
+
+
+void CTempretureForecastDlg::InitComboBox()
+{
+	//初始化高温警报
+	for (int i = 10; i <= 50; i++)
+	{
+		CString value;
+		value.Format(_T("%d"), i);
+		m_highTempAlarm.AddString(value);
+	}
+	m_highTempAlarm.SetCurSel(40);
+
+	//初始化显示时间间隔
+	m_collectInterval.AddString(_T("1秒"));
+	m_collectInterval.AddString(_T("10秒"));
+	m_collectInterval.AddString(_T("30秒"));
+	m_collectInterval.AddString(_T("1分"));
+	m_collectInterval.AddString(_T("10分"));
+	m_collectInterval.AddString(_T("30分"));
+	m_collectInterval.AddString(_T("1小时"));
+	m_collectInterval.SetCurSel(0);
+
+	//初始化预测算法
+	m_forecastAlgorithm.AddString(_T("最小二乘法"));
+	m_forecastAlgorithm.AddString(_T("曲线拟合"));
+	m_forecastAlgorithm.SetCurSel(0);
+}
+
+
+void CTempretureForecastDlg::OnCbnSelchangeComboAlarm()
+{
+	// TODO:  在此添加控件通知处理程序代码
+	CString strAlarmValue;
+	int nSel;
+
+	// 获取组合框控件的列表框中选中项的索引   
+	nSel = m_highTempAlarm.GetCurSel();
+	// 根据选中项索引获取该项字符串   
+	m_highTempAlarm.GetLBText(nSel, strAlarmValue);
+	// 将组合框中选中的字符串显示到IDC_SEL_WEB_EDIT编辑框中   
+	AfxMessageBox(strAlarmValue);
+	m_alarmValue = nSel + 10;
+}
+
+
+void CTempretureForecastDlg::OnCbnSelchangeComboCollectinterval()
+{
+	// TODO:  在此添加控件通知处理程序代码
+	CString strIntervalValue;
+	int nSel;
+	nSel = m_collectInterval.GetCurSel();
+	m_collectInterval.GetLBText(nSel, strIntervalValue);
+	AfxMessageBox(strIntervalValue);
+	KillTimer(m_curTimerID);
+	switch (nSel)
+	{
+	default:
+		break;
+	case TIMER_1S:
+		SetTimer(TIMER_1S, 1000, NULL);
+	case TIMER_10S:
+		SetTimer(TIMER_10S, 1000*10, NULL);
+	case TIMER_30S:
+		SetTimer(TIMER_30S, 1000 * 30, NULL);
+	case TIMER_1M:
+		SetTimer(TIMER_1M, 1000 * 60, NULL);
+	case TIMER_10M:
+		SetTimer(TIMER_10M, 1000 * 600, NULL);
+	case TIMER_30M:
+		SetTimer(TIMER_30M, 1000 * 1800, NULL);
+	case TIMER_1H:
+		SetTimer(TIMER_1H, 1000 * 3600, NULL);
+	}
+	m_curTimerID = nSel+1;
+}
+
+
+void CTempretureForecastDlg::OnCbnSelchangeComboForecastalg()
+{
+	// TODO:  在此添加控件通知处理程序代码
+	CString strAlgValue;
+	int nSel;
+	nSel = m_forecastAlgorithm.GetCurSel();
+	m_forecastAlgorithm.GetLBText(nSel, strAlgValue);
+	AfxMessageBox(strAlgValue);
 }
