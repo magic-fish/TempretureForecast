@@ -43,6 +43,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Program Files\MySQL\MySQL Server 5.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files\MySQL\MySQL Server 5.5\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -109,6 +111,7 @@
     <ClInclude Include="TempData.h" />
     <ClInclude Include="TempretureForecast.h" />
     <ClInclude Include="TempretureForecastDlg.h" />
+    <ClInclude Include="TempretureImpl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DbConnect.cpp" />
@@ -120,6 +123,7 @@
     <ClCompile Include="TempData.cpp" />
     <ClCompile Include="TempretureForecast.cpp" />
     <ClCompile Include="TempretureForecastDlg.cpp" />
+    <ClCompile Include="TempretureImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TempretureForecast.rc" />
