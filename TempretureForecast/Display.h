@@ -32,5 +32,8 @@ public:
 	CPen greenPen;      // 用于创建绿色画笔   画实际温度曲线
 	CPen brownPen;      // 用于创建褐色画笔   画预测温度曲线
 	CPen *pOldPen;      // 用于存放旧画笔   
+	int SetMaxAndMinTemp();
+	int GetMaxTemp();
+	int GetMinTemp();
 };
 

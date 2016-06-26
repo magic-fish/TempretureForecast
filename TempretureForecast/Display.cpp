@@ -6,7 +6,7 @@ CDisplay::CDisplay()
 {
 	// 创建画笔
 	blackPen.CreatePen(PS_SOLID, 2, RGB(0, 0, 0));
-	bluePen.CreatePen(PS_DOT, 1, RGB(0, 0, 255));
+	bluePen.CreatePen(PS_SOLID, 1, RGB(0, 0, 255));
 	grayPen.CreatePen(PS_DOT, 1, RGB(128, 128, 128));
 	redPen.CreatePen(PS_DOT, 1, RGB(255, 0, 0));
 	greenPen.CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
@@ -20,7 +20,8 @@ CDisplay::CDisplay()
 		m_tempData.push_back(data);
 		m_forecastData.push_back(data);
 	}
-	   
+	m_maxTemp = 0;
+	m_minTemp = 0;
 
 }
 
@@ -127,7 +128,7 @@ void CDisplay::DrawGraph(CDC *pDC)
 	// 计算fDeltaX和fDeltaY   
 	fDeltaX = (float)m_codRect.Width() / 2 / (DATA_SIZE-1);
 	fDeltaY = (float)m_codRect.Height() / 50;
-
+	SetMaxAndMinTemp();
 
 	pOldPen = pDC->SelectObject(&greenPen);
 
@@ -175,4 +176,28 @@ void CDisplay::GetMinAndMaxTemp(int minTemp, int maxTemp)
 {
 	m_minTemp = minTemp;
 	m_maxTemp = maxTemp;
+}
+
+
+int CDisplay::SetMaxAndMinTemp()
+{
+	m_maxTemp = m_minTemp = m_tempData.at(0).m_tempreture;
+	for (int i = 0; i < m_tempData.size(); i++)
+	{
+		m_minTemp = min(m_minTemp, m_tempData.at(i).m_tempreture);
+		m_maxTemp = max(m_maxTemp, m_tempData.at(i).m_tempreture);
+	}
+	return 0;
+}
+
+
+int CDisplay::GetMaxTemp()
+{
+	return m_maxTemp;
+}
+
+
+int CDisplay::GetMinTemp()
+{
+	return m_minTemp;
 }
