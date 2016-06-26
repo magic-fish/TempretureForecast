@@ -58,6 +58,7 @@ END_MESSAGE_MAP()
 
 CTempretureForecastDlg::CTempretureForecastDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CTempretureForecastDlg::IDD, pParent)
+	, m_curTemp(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -66,12 +67,15 @@ void CTempretureForecastDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_STATIC_BACKGROUND, m_bgPic);
-	DDX_Text(pDX, IDC_EDIT_TIMEANDTEMP, m_dateAndCurTempreture);
+	DDX_Text(pDX, IDC_EDIT_DATE, m_date);
 	DDX_Text(pDX, IDC_EDIT_MAXTEMP, m_MaxTemp);
 	DDX_Text(pDX, IDC_EDIT_MINTEMP, m_MinTemp);
+	DDX_Text(pDX, IDC_EDIT_CURTIME, m_curTime);
+	DDX_Text(pDX, IDC_EDIT_CURTEMP, m_curTemp);
 	DDX_Control(pDX, IDC_COMBO_ALARM, m_highTempAlarm);
 	DDX_Control(pDX, IDC_COMBO_COLLECTINTERVAL, m_collectInterval);
 	DDX_Control(pDX, IDC_COMBO_FORECASTALG, m_forecastAlgorithm);
+
 }
 
 BEGIN_MESSAGE_MAP(CTempretureForecastDlg, CDialogEx)
@@ -134,7 +138,6 @@ BOOL CTempretureForecastDlg::OnInitDialog()
 	// 启动定时器，ID为1，定时时间为200ms   
 	SetTimer(TIMER_1S, 1000, NULL);
 	m_curTimerID = TIMER_1S;
-
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -197,17 +200,18 @@ void CTempretureForecastDlg::OnTimer(UINT_PTR nIDEvent)
 	data.m_tempreture = rand() % 50 + 1;
 	m_displayer.AddData(data);
 	//绘制坐标系
-	//DrawCoordinate(&m_memDC, m_rect);
 	m_displayer.DrawCoordinate(&m_memDC,m_rect);
 	// 绘制波形图   
-	//DrawWave(&m_memDC, m_rect);
 	m_displayer.DrawGraph(&m_memDC);
 	// 显示当前的最高温度和最低温度
 	m_numOfTemp = POINT_COUNT;
-	GetMaxAndMinTemp();
-
+	//GetMaxAndMinTemp();
+	m_MaxTemp = m_displayer.GetMaxTemp();
+	m_MinTemp = m_displayer.GetMinTemp();
 	// 显示当前时间和实时温度
-	m_dateAndCurTempreture = GetCurTime() + GetCurTemp(data.m_tempreture);
+	m_date = GetCurTime();
+	m_curTime.Format(_T("%02d:%02d:%02d"), data.m_date.wHour, data.m_date.wMinute, data.m_date.wSecond);
+	m_curTemp.Format(_T("%.0lf ℃"),data.m_tempreture);
 	//将缓冲DC画到实际的窗口上
 	m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
 	//if (data.m_tempreture>=m_alarmValue)
@@ -242,8 +246,8 @@ CString CTempretureForecastDlg::GetCurTime()
 	SYSTEMTIME curTime;
 	GetLocalTime(&curTime);
 	CString str;
-	str.Format(_T("%02d月%02d日 %02d时"), curTime.wMonth, curTime.wDay,
-		curTime.wHour);
+	CString week[8] = {_T(""), _T("周一"), _T("周二"), _T("周三"), _T("周四"), _T("周五"), _T("周六"), _T("周日") };
+	str.Format(_T("%04d年%02d月%02d日 ") + week[curTime.wDayOfWeek],curTime.wYear, curTime.wMonth, curTime.wDay);
 	return str;
 }
 
