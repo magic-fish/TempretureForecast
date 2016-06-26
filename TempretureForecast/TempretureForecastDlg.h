@@ -21,7 +21,8 @@ public:
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 	//int m_waveDataValues[POINT_COUNT];
-	CString m_dateAndCurTempreture;         //当前时间和当前温度
+	CString m_date;       //日期
+	CString m_curTime;    //当前时间
 	CStatic m_bgPic;      //背景
 	CDC m_memDC;          //内存DC
 	CBitmap m_bmp;        //缓存位图
@@ -63,4 +64,6 @@ public:
 	// 预测算法
 	CComboBox m_forecastAlgorithm;
 	afx_msg void OnCbnSelchangeComboForecastalg();
+	// 实时温度
+	CString m_curTemp;
 };
