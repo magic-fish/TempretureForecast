@@ -10,7 +10,7 @@ public:
 	CTempData();
 	~CTempData();
 	// ÎÂ¶È
-	double m_tempreture;
+	double m_temperature;
 	// Ê±¼ä
 	SYSTEMTIME m_date;
 

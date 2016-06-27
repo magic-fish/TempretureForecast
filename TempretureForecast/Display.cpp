@@ -16,7 +16,7 @@ CDisplay::CDisplay()
 	{
 		CTempData data;
 		GetLocalTime(&data.m_date);
-		data.m_tempreture = 0;
+		data.m_temperature = 0;
 		m_tempData.push_back(data);
 		m_forecastData.push_back(data);
 	}
@@ -138,8 +138,8 @@ void CDisplay::DrawGraph(CDC *pDC)
 	for (int i = 0; i<DATA_SIZE; i++)
 	{
 		nX = m_codRect.left + (int)(i * fDeltaX);
-		nY = m_codRect.bottom - (int)(m_tempData.at(i).m_tempreture * fDeltaY);
-		if (m_tempData.at(i).m_tempreture == 0)
+		nY = m_codRect.bottom - (int)(m_tempData.at(i).m_temperature * fDeltaY);
+		if (m_tempData.at(i).m_temperature == 0)
 			pDC->MoveTo(nX, nY);
 		else if (i==0)
 			pDC->MoveTo(m_codRect.left, nY);
@@ -181,11 +181,11 @@ void CDisplay::GetMinAndMaxTemp(int minTemp, int maxTemp)
 
 int CDisplay::SetMaxAndMinTemp()
 {
-	m_maxTemp = m_minTemp = m_tempData.at(0).m_tempreture;
+	m_maxTemp = m_minTemp = m_tempData.at(0).m_temperature;
 	for (int i = 0; i < m_tempData.size(); i++)
 	{
-		m_minTemp = min(m_minTemp, m_tempData.at(i).m_tempreture);
-		m_maxTemp = max(m_maxTemp, m_tempData.at(i).m_tempreture);
+		m_minTemp = min(m_minTemp, m_tempData.at(i).m_temperature);
+		m_maxTemp = max(m_maxTemp, m_tempData.at(i).m_temperature);
 	}
 	return 0;
 }
