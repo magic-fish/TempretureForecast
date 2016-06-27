@@ -5,9 +5,36 @@
 #pragma once
 #include "Display.h"
 #include "afxwin.h"
+#include "resource.h"
+#include "DataReceive.h"
 #define POINT_COUNT 48
 
 
+#define HZ_30 "30"
+#define HZ_20 "20"
+#define HZ_10 "10"
+#define HZ_5  "5"
+#define HZ_3  "3"
+#define HZ_2  "2"
+#define HZ_1  "1"
+
+#define POINT_COUNT 48
+#define TIMER_1HZ 1
+#define TIMER_2HZ 2
+#define TIMER_3HZ 3
+#define TIMER_5HZ 5
+#define TIMER_10HZ 10
+#define TIMER_20HZ 20
+#define TIMER_30HZ 30
+
+#define TIMER_1S 0
+#define TIMER_10S 1
+#define TIMER_30S 2
+#define TIMER_1M 3
+#define TIMER_10M 4
+#define TIMER_30M 5
+#define TIMER_1H 6
+class DataReceive;
 // CTempretureForecastDlg 对话框
 class CTempretureForecastDlg : public CDialogEx
 {
@@ -34,6 +61,9 @@ public:
 	int m_numOfTemp;      //温度数据数量
 	CDisplay m_displayer;   //图像显示	
 	int m_curTimerID;     //当前的定时器ID
+	DataReceive recv;
+	static DWORD WINAPI DataReceiveProc(LPVOID lpParameter);
+	static DWORD WINAPI DataReceiveInitProc(LPVOID lpParameter);
 // 实现
 protected:
 	HICON m_hIcon;
@@ -49,6 +79,8 @@ public:
 private:
 	// 获得当前时间段的最高温度和最低温度
 	void GetMaxAndMinTemp();
+
+	
 public:
 	afx_msg void OnClose();
 	//获得当前时间
@@ -66,4 +98,8 @@ public:
 	afx_msg void OnCbnSelchangeComboForecastalg();
 	// 实时温度
 	CString m_curTemp;
+	//温度的数据容器
+	vector<CTempData*> m_DataVecBuffI;
+	vector<CTempData*> m_DataVecBuffII;
+	void UpDateTempView(CTempData * data);
 };

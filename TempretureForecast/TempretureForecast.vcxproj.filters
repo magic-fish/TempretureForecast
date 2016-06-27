@@ -45,6 +45,12 @@
     <ClInclude Include="TempretureImpl.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DataReceive.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LinearPredict.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TempretureForecast.cpp">
@@ -66,6 +72,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="TempretureImpl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DataReceive.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="LinearPredict.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

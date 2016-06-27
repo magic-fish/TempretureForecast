@@ -10,14 +10,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#define POINT_COUNT 48
-#define TIMER_1S 0
-#define TIMER_10S 1
-#define TIMER_30S 2
-#define TIMER_1M 3
-#define TIMER_10M 4
-#define TIMER_30M 5
-#define TIMER_1H 6
+
 #endif
 
 
@@ -131,12 +124,14 @@ BOOL CTempretureForecastDlg::OnInitDialog()
 	//创建兼容bitmap
 	m_bmp.CreateCompatibleBitmap(m_bgPic.GetDC(), m_rect.Width(), m_rect.Height());
     m_memDC.SelectObject(&m_bmp);
- 
+	HANDLE hThread = CreateThread(NULL, 0, DataReceiveInitProc, (LPVOID)this, 0, NULL);
+	CloseHandle(hThread);
+
 	m_displayer.Init(m_rect);
 	// 以时间为种子来构造随机数生成器   
 	srand((unsigned)time(NULL));
 	// 启动定时器，ID为1，定时时间为200ms   
-	SetTimer(TIMER_1S, 1000, NULL);
+	SetTimer(TIMER_1S, 1000 / TIMER_1HZ, NULL);
 	m_curTimerID = TIMER_1S;
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -195,28 +190,28 @@ HCURSOR CTempretureForecastDlg::OnQueryDragIcon()
 void CTempretureForecastDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO:  在此添加消息处理程序代码和/或调用默认值  
-	CTempData data;
-	GetLocalTime(&data.m_date);
-	data.m_tempreture = rand() % 50 + 1;
-	m_displayer.AddData(data);
-	//绘制坐标系
-	m_displayer.DrawCoordinate(&m_memDC,m_rect);
-	// 绘制波形图   
-	m_displayer.DrawGraph(&m_memDC);
-	// 显示当前的最高温度和最低温度
-	m_numOfTemp = POINT_COUNT;
-	//GetMaxAndMinTemp();
-	m_MaxTemp = m_displayer.GetMaxTemp();
-	m_MinTemp = m_displayer.GetMinTemp();
-	// 显示当前时间和实时温度
-	m_date = GetCurTime();
-	m_curTime.Format(_T("%02d:%02d:%02d"), data.m_date.wHour, data.m_date.wMinute, data.m_date.wSecond);
-	m_curTemp.Format(_T("%.0lf ℃"),data.m_tempreture);
-	//将缓冲DC画到实际的窗口上
-	m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
-	//if (data.m_tempreture>=m_alarmValue)
-		//AfxMessageBox(_T("高温警报！！"));
-	UpdateData(FALSE);
+	//CTempData data;
+	//GetLocalTime(&data.m_date);
+	//data.m_tempreture = rand() % 50 + 1;
+	//m_displayer.AddData(data);
+	////绘制坐标系
+	//m_displayer.DrawCoordinate(&m_memDC,m_rect);
+	//// 绘制波形图   
+	//m_displayer.DrawGraph(&m_memDC);
+	//// 显示当前的最高温度和最低温度
+	//m_numOfTemp = POINT_COUNT;
+	////GetMaxAndMinTemp();
+	//m_MaxTemp = m_displayer.GetMaxTemp();
+	//m_MinTemp = m_displayer.GetMinTemp();
+	//// 显示当前时间和实时温度
+	//m_date = GetCurTime();
+	//m_curTime.Format(_T("%02d:%02d:%02d"), data.m_date.wHour, data.m_date.wMinute, data.m_date.wSecond);
+	//m_curTemp.Format(_T("%.0lf ℃"),data.m_tempreture);
+	////将缓冲DC画到实际的窗口上
+	//m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
+	////if (data.m_tempreture>=m_alarmValue)
+	//	//AfxMessageBox(_T("高温警报！！"));
+	//UpdateData(FALSE);
 	CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -273,13 +268,14 @@ void CTempretureForecastDlg::InitComboBox()
 	m_highTempAlarm.SetCurSel(40);
 
 	//初始化显示时间间隔
-	m_collectInterval.AddString(_T("1秒"));
-	m_collectInterval.AddString(_T("10秒"));
-	m_collectInterval.AddString(_T("30秒"));
-	m_collectInterval.AddString(_T("1分"));
-	m_collectInterval.AddString(_T("10分"));
-	m_collectInterval.AddString(_T("30分"));
-	m_collectInterval.AddString(_T("1小时"));
+	m_collectInterval.AddString(_T("1Hz"));
+	m_collectInterval.AddString(_T("2Hz"));
+	m_collectInterval.AddString(_T("3Hz"));
+	m_collectInterval.AddString(_T("5Hz"));
+	m_collectInterval.AddString(_T("10Hz"));
+	m_collectInterval.AddString(_T("20Hz"));
+	m_collectInterval.AddString(_T("30Hz"));
+
 	m_collectInterval.SetCurSel(0);
 
 	//初始化预测算法
@@ -307,33 +303,56 @@ void CTempretureForecastDlg::OnCbnSelchangeComboAlarm()
 
 void CTempretureForecastDlg::OnCbnSelchangeComboCollectinterval()
 {
+	recv.SetFrequency("5");
 	// TODO:  在此添加控件通知处理程序代码
 	CString strIntervalValue;
 	int nSel;
 	nSel = m_collectInterval.GetCurSel();
 	m_collectInterval.GetLBText(nSel, strIntervalValue);
-	AfxMessageBox(strIntervalValue);
+	//AfxMessageBox(strIntervalValue);
 	KillTimer(m_curTimerID);
 	switch (nSel)
 	{
+	
+	case TIMER_1S:
+		recv.SetFrequency(HZ_1);
+		recv.Send();
+		SetTimer(TIMER_1S, 1000 / TIMER_1HZ, NULL);
+		break;
+	case TIMER_10S:
+		recv.SetFrequency(HZ_2);
+		recv.Send();
+		SetTimer(TIMER_10S, 1000 / TIMER_2HZ, NULL);
+		break;
+	case TIMER_30S:
+		recv.SetFrequency(HZ_3);
+		recv.Send();
+		SetTimer(TIMER_30S, 1000 / TIMER_3HZ, NULL);
+		break;
+	case TIMER_1M:
+		recv.SetFrequency(HZ_5);
+		recv.Send();
+		SetTimer(TIMER_1M, 1000 / TIMER_5HZ, NULL);
+		break;
+	case TIMER_10M:
+		recv.SetFrequency(HZ_10);
+		recv.Send();
+		SetTimer(TIMER_10M, 1000 / TIMER_10HZ, NULL);
+		break;
+	case TIMER_30M:
+		recv.SetFrequency(HZ_20);
+		recv.Send();
+		SetTimer(TIMER_30M, 1000 / TIMER_20HZ, NULL);
+		break;
+	case TIMER_1H:
+		recv.SetFrequency(HZ_30);
+		recv.Send();
+		SetTimer(TIMER_1H, 1000 / TIMER_30HZ, NULL);
+		break;
 	default:
 		break;
-	case TIMER_1S:
-		SetTimer(TIMER_1S, 1000, NULL);
-	case TIMER_10S:
-		SetTimer(TIMER_10S, 1000*10, NULL);
-	case TIMER_30S:
-		SetTimer(TIMER_30S, 1000 * 30, NULL);
-	case TIMER_1M:
-		SetTimer(TIMER_1M, 1000 * 60, NULL);
-	case TIMER_10M:
-		SetTimer(TIMER_10M, 1000 * 600, NULL);
-	case TIMER_30M:
-		SetTimer(TIMER_30M, 1000 * 1800, NULL);
-	case TIMER_1H:
-		SetTimer(TIMER_1H, 1000 * 3600, NULL);
 	}
-	m_curTimerID = nSel+1;
+	m_curTimerID = nSel;
 }
 
 
@@ -345,4 +364,48 @@ void CTempretureForecastDlg::OnCbnSelchangeComboForecastalg()
 	nSel = m_forecastAlgorithm.GetCurSel();
 	m_forecastAlgorithm.GetLBText(nSel, strAlgValue);
 	AfxMessageBox(strAlgValue);
+}
+
+
+DWORD WINAPI CTempretureForecastDlg::DataReceiveProc(LPVOID lpParameter)
+{
+	
+	return 0;
+}
+
+DWORD WINAPI CTempretureForecastDlg::DataReceiveInitProc(LPVOID lpParameter)
+{
+	CTempretureForecastDlg * pTaskMain = (CTempretureForecastDlg *)lpParameter;   //把this指针传进来
+	pTaskMain->recv.Init(pTaskMain);
+	pTaskMain->recv.Start();
+	pTaskMain->recv.SetFrequency("1");
+	return 0;
+}
+void CTempretureForecastDlg::UpDateTempView(CTempData *data)
+{
+	// TODO:  在此添加消息处理程序代码和/或调用默认值  
+	//CTempData data;
+	//GetLocalTime(&data.m_date);
+	//data.m_tempreture = rand() % 50 + 1;
+	m_displayer.AddData(*data);
+	//绘制坐标系
+	m_displayer.DrawCoordinate(&m_memDC, m_rect);
+	// 绘制波形图   
+	m_displayer.DrawGraph(&m_memDC);
+	// 显示当前的最高温度和最低温度
+	m_numOfTemp = POINT_COUNT;
+	//GetMaxAndMinTemp();
+	m_MaxTemp = m_displayer.GetMaxTemp();
+	m_MinTemp = m_displayer.GetMinTemp();
+	// 显示当前时间和实时温度
+	m_date = GetCurTime();
+	m_curTime.Format(_T("%02d:%02d:%02d"), data->m_date.wHour, data->m_date.wMinute, data->m_date.wSecond);
+	m_curTemp.Format(_T("%.0lf ℃"), data->m_temperature);
+	//将缓冲DC画到实际的窗口上
+	m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
+	//if (data.m_tempreture>=m_alarmValue)
+	//AfxMessageBox(_T("高温警报！！"));
+	Invalidate(false);
+	//UpdateWindow(false);
+	//UpdateData(FALSE);
 }
