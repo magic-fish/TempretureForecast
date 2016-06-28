@@ -11,6 +11,7 @@ CDisplay::CDisplay()
 	redPen.CreatePen(PS_DOT, 1, RGB(255, 0, 0));
 	greenPen.CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
 	brownPen.CreatePen(PS_SOLID, 1, RGB(128, 0, 0));
+	redBrush.CreateSolidBrush(RGB(255, 0, 0));
    //数据初始化
 	for (; m_tempData.size() < DATA_SIZE;)
 	{
@@ -149,15 +150,21 @@ void CDisplay::DrawGraph(CDC *pDC)
 
 	//绘制预测曲线
 	pDC->SelectObject(&brownPen);
-	for (int i = 0; i<DATA_SIZE; i++)
+	CBrush *oldBrush =  pDC->SelectObject(&redBrush);
+	for (int i = 0; i<DATA_SIZE; i+=5)
 	{
 		nX = m_codRect.left+m_codRect.Width() / 2 + (int)(i * fDeltaX);
-		nY = m_codRect.bottom - (int)(i*i/2);
+		nY = m_codRect.bottom - (int)(m_forecastData.at(i).m_temperature * fDeltaY);
+		CRect cRect;
+		cRect.SetRect(CPoint(nX - 5, nY - 5), CPoint(nX + 5, nY + 5));
+		pDC->Ellipse(cRect);
+
 		if (i == 0)
 			pDC->MoveTo(m_codRect.left + m_codRect.Width() / 2, nY);
 		else
 			pDC->LineTo(nX, nY);
 	}
+	pDC->SelectObject(oldBrush);
 	// 恢复旧画笔   
 	pDC->SelectObject(pOldPen);
 }
@@ -170,6 +177,10 @@ void CDisplay::AddData(CTempData data)
 	m_tempData.push_back(data);
 }
 
+void CDisplay::AddForecastData(vector<CTempData>p_forcaseData)//录入预测数据forcaseData
+{
+	m_forecastData = p_forcaseData;
+}
 
 // 获得最高温度和最低温度
 void CDisplay::GetMinAndMaxTemp(int minTemp, int maxTemp)
