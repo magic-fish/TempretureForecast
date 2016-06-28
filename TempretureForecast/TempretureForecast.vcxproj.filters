@@ -51,6 +51,18 @@
     <ClInclude Include="LinearPredict.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="FileImpl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CurvePredict.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodingUtil.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="StringSplitUtil.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TempretureForecast.cpp">
@@ -80,6 +92,18 @@
     <ClCompile Include="LinearPredict.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="FileImpl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CurvePredict.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="EncodingUtil.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="StringSplitUtil.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TempretureForecast.rc">
@@ -90,10 +114,17 @@
     <None Include="res\TempretureForecast.rc2">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\TempretureForecast.ico">
       <Filter>资源文件</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="res\ludashi.mp3" />
+    <Media Include="res\ludashi.wav">
+      <Filter>资源文件</Filter>
+    </Media>
   </ItemGroup>
 </Project>
