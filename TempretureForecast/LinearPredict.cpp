@@ -4,6 +4,8 @@
 
 LinearPredict::LinearPredict()
 {
+	 coe_a = 0;                
+	 coe_b = 0;				
 }
 
 
@@ -12,11 +14,8 @@ LinearPredict::~LinearPredict()
 }
 
 
-vector<double> LinearPredict::Calculate(vector<CTempData> tempDatas)
+void LinearPredict::Calculate(vector<CTempData> tempDatas)
 {
-	vector<double>coefficient;           //一次函数y=ax+b返回的a，b参数
-	float coe_a = 0;                     //函数的a参数
-	float coe_b = 0;					 //函数的b参数
 	float per_x = 0;					 //所有数据横坐标x的平均值
 	float per_y = 0;                     //所有数据纵坐标y的平均值
 	float sumxy = 0;                     //所有数据xy乘积的和
@@ -37,7 +36,18 @@ vector<double> LinearPredict::Calculate(vector<CTempData> tempDatas)
 	coe_a = (sumxy - tempDatas.size() * per_x * per_y) / (sumsqrx - tempDatas.size() * per_x * per_x);
 	coe_b = per_y - coe_a * per_y;
 
-	coefficient.push_back(coe_a);
-	coefficient.push_back(coe_b);
-	return coefficient;
+}
+
+vector<CTempData> LinearPredict::GetForecastData(vector<CTempData> tempDatas)
+{
+	Calculate(tempDatas);
+	vector<CTempData>pVec;           //一次函数y=ax+b返回的a，b参数
+	for (int i = 0; i < tempDatas.size(); i++)
+	{
+		CTempData pdata;
+		GetLocalTime(&pdata.m_date);
+		pdata.m_temperature = coe_a*i + coe_b;
+		pVec.push_back(pdata);
+	}
+	return pVec;
 }

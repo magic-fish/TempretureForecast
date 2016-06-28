@@ -16,13 +16,13 @@ CTempData::~CTempData()
 CTempData::CTempData(double temperature, SYSTEMTIME date)
 {
 	this->m_date = date;
-	this->m_tempreture = temperature;
+	this->m_temperature = temperature;
 }
 
 CString CTempData::GetTemperature()
 {
 	CString data;
-	data.Format(_T("%lf\n"), m_tempreture);
+	data.Format(_T("%lf\n"), m_temperature);
 	return data;
 }
 CString CTempData::GetTime()
@@ -34,9 +34,10 @@ CString CTempData::GetTime()
 
 
 // ·µ»Ø×Ö·û´®
-CString CTempData::Tostring()
+string CTempData::ToData()
 {
-	CString data;
-	data.Format(_T("%02d:%02d:%02d.%3d  %lf\n"), m_date.wHour, m_date.wMinute, m_date.wSecond, m_date.wMilliseconds, m_tempreture);
+	char data[MAX_SIZE];
+	sprintf_s(data, "%02d:%02d:%02d:%3d:%lf", m_date.wHour, m_date.wMinute, m_date.wSecond, m_date.wMilliseconds, m_temperature);
+	string str = data;
 	return data;
 }

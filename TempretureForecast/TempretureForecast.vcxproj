@@ -103,12 +103,16 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CurvePredict.h" />
     <ClInclude Include="DataReceive.h" />
     <ClInclude Include="DbConnect.h" />
     <ClInclude Include="Display.h" />
+    <ClInclude Include="EncodingUtil.h" />
+    <ClInclude Include="FileImpl.h" />
     <ClInclude Include="LinearPredict.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="StringSplitUtil.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TempData.h" />
     <ClInclude Include="TempretureForecast.h" />
@@ -116,14 +120,18 @@
     <ClInclude Include="TempretureImpl.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CurvePredict.cpp" />
     <ClCompile Include="DataReceive.cpp" />
     <ClCompile Include="DbConnect.cpp" />
     <ClCompile Include="Display.cpp" />
+    <ClCompile Include="EncodingUtil.cpp" />
+    <ClCompile Include="FileImpl.cpp" />
     <ClCompile Include="LinearPredict.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="StringSplitUtil.cpp" />
     <ClCompile Include="TempData.cpp" />
     <ClCompile Include="TempretureForecast.cpp" />
     <ClCompile Include="TempretureForecastDlg.cpp" />
@@ -133,10 +141,15 @@
     <ResourceCompile Include="TempretureForecast.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="res\TempretureForecast.rc2" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\TempretureForecast.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="res\ludashi.mp3" />
+    <Media Include="res\ludashi.wav" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
