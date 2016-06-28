@@ -4,6 +4,9 @@
  * author wjy
  * 添加接口利于数据解析
  */
+#define MAX_SIZE 1024
+#include <string>
+using namespace std;
 class CTempData
 {
 public:
@@ -20,6 +23,6 @@ public:
 	//返回时间的字符串
 	CString GetTime();
 	// 返回字符串
-	CString Tostring();
+	string ToData();
 };
 
