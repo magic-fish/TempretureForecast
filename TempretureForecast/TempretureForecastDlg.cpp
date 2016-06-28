@@ -7,7 +7,13 @@
 #include "TempretureForecastDlg.h"
 #include "afxdialogex.h"
 #include "TempData.h"
-
+#include "FileImpl.h"
+#include "LinearPredict.h"
+#include "CurvePredict.h"
+#include <string>
+#include "EncodingUtil.h"
+#include "TempretureImpl.h"
+using namespace std;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 
@@ -54,6 +60,10 @@ CTempretureForecastDlg::CTempretureForecastDlg(CWnd* pParent /*=NULL*/)
 	, m_curTemp(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	datanum = 0;
+	buffswitch = 0;
+	m_alarmValue = 50;
+	isplay = false;
 }
 
 void CTempretureForecastDlg::DoDataExchange(CDataExchange* pDX)
@@ -81,6 +91,7 @@ BEGIN_MESSAGE_MAP(CTempretureForecastDlg, CDialogEx)
 ON_CBN_SELCHANGE(IDC_COMBO_ALARM, &CTempretureForecastDlg::OnCbnSelchangeComboAlarm)
 ON_CBN_SELCHANGE(IDC_COMBO_COLLECTINTERVAL, &CTempretureForecastDlg::OnCbnSelchangeComboCollectinterval)
 ON_CBN_SELCHANGE(IDC_COMBO_FORECASTALG, &CTempretureForecastDlg::OnCbnSelchangeComboForecastalg)
+ON_BN_CLICKED(IDC_IMPORTBTN, &CTempretureForecastDlg::OnBnClickedImportbtn)
 END_MESSAGE_MAP()
 
 
@@ -89,8 +100,6 @@ END_MESSAGE_MAP()
 BOOL CTempretureForecastDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
-	// 将“关于...”菜单项添加到系统菜单中。
 
 	// IDM_ABOUTBOX 必须在系统命令范围内。
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
@@ -189,29 +198,7 @@ HCURSOR CTempretureForecastDlg::OnQueryDragIcon()
 
 void CTempretureForecastDlg::OnTimer(UINT_PTR nIDEvent)
 {
-	// TODO:  在此添加消息处理程序代码和/或调用默认值  
-	//CTempData data;
-	//GetLocalTime(&data.m_date);
-	//data.m_tempreture = rand() % 50 + 1;
-	//m_displayer.AddData(data);
-	////绘制坐标系
-	//m_displayer.DrawCoordinate(&m_memDC,m_rect);
-	//// 绘制波形图   
-	//m_displayer.DrawGraph(&m_memDC);
-	//// 显示当前的最高温度和最低温度
-	//m_numOfTemp = POINT_COUNT;
-	////GetMaxAndMinTemp();
-	//m_MaxTemp = m_displayer.GetMaxTemp();
-	//m_MinTemp = m_displayer.GetMinTemp();
-	//// 显示当前时间和实时温度
-	//m_date = GetCurTime();
-	//m_curTime.Format(_T("%02d:%02d:%02d"), data.m_date.wHour, data.m_date.wMinute, data.m_date.wSecond);
-	//m_curTemp.Format(_T("%.0lf ℃"),data.m_tempreture);
-	////将缓冲DC画到实际的窗口上
-	//m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
-	////if (data.m_tempreture>=m_alarmValue)
-	//	//AfxMessageBox(_T("高温警报！！"));
-	//UpdateData(FALSE);
+	UpdateData(FALSE);
 	CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -228,7 +215,19 @@ void CTempretureForecastDlg::GetMaxAndMinTemp()
 void CTempretureForecastDlg::OnClose()
 {
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
-
+	
+	if (buffswitch == 0){
+		CFileImpl impl;
+		//将缓存容器I的数据插入到文件中
+		impl.WriteTempreturetoFile(m_DataVecBuffI);
+		//切换容器
+		m_DataVecBuffI.clear();
+	}
+	else{
+		CFileImpl impl;
+		impl.WriteTempreturetoFile(m_DataVecBuffII);
+		m_DataVecBuffII.clear();
+	}
 	m_memDC.DeleteDC();        //删除DC
 	m_bmp.DeleteObject();      //删除位图
 	KillTimer(m_curTimerID);
@@ -279,8 +278,9 @@ void CTempretureForecastDlg::InitComboBox()
 	m_collectInterval.SetCurSel(0);
 
 	//初始化预测算法
-	m_forecastAlgorithm.AddString(_T("最小二乘法"));
+	m_forecastAlgorithm.AddString(_T("直线拟合"));
 	m_forecastAlgorithm.AddString(_T("曲线拟合"));
+
 	m_forecastAlgorithm.SetCurSel(0);
 }
 
@@ -295,67 +295,44 @@ void CTempretureForecastDlg::OnCbnSelchangeComboAlarm()
 	nSel = m_highTempAlarm.GetCurSel();
 	// 根据选中项索引获取该项字符串   
 	m_highTempAlarm.GetLBText(nSel, strAlarmValue);
-	// 将组合框中选中的字符串显示到IDC_SEL_WEB_EDIT编辑框中   
-	AfxMessageBox(strAlarmValue);
+	// 将组合框中选中的字符串显示到IDC_SEL_WEB_EDIT编辑框中
+
+	//PlayWav();
 	m_alarmValue = nSel + 10;
 }
 
 
 void CTempretureForecastDlg::OnCbnSelchangeComboCollectinterval()
 {
-	recv.SetFrequency("5");
-	// TODO:  在此添加控件通知处理程序代码
 	CString strIntervalValue;
 	int nSel;
 	nSel = m_collectInterval.GetCurSel();
-	m_collectInterval.GetLBText(nSel, strIntervalValue);
-	//AfxMessageBox(strIntervalValue);
-	KillTimer(m_curTimerID);
-	switch (nSel)
-	{
 	
-	case TIMER_1S:
+	m_collectInterval.GetLBText(nSel, strIntervalValue);
+	if (strIntervalValue == HZ1){
 		recv.SetFrequency(HZ_1);
-		recv.Send();
-		SetTimer(TIMER_1S, 1000 / TIMER_1HZ, NULL);
-		break;
-	case TIMER_10S:
-		recv.SetFrequency(HZ_2);
-		recv.Send();
-		SetTimer(TIMER_10S, 1000 / TIMER_2HZ, NULL);
-		break;
-	case TIMER_30S:
-		recv.SetFrequency(HZ_3);
-		recv.Send();
-		SetTimer(TIMER_30S, 1000 / TIMER_3HZ, NULL);
-		break;
-	case TIMER_1M:
-		recv.SetFrequency(HZ_5);
-		recv.Send();
-		SetTimer(TIMER_1M, 1000 / TIMER_5HZ, NULL);
-		break;
-	case TIMER_10M:
-		recv.SetFrequency(HZ_10);
-		recv.Send();
-		SetTimer(TIMER_10M, 1000 / TIMER_10HZ, NULL);
-		break;
-	case TIMER_30M:
-		recv.SetFrequency(HZ_20);
-		recv.Send();
-		SetTimer(TIMER_30M, 1000 / TIMER_20HZ, NULL);
-		break;
-	case TIMER_1H:
-		recv.SetFrequency(HZ_30);
-		recv.Send();
-		SetTimer(TIMER_1H, 1000 / TIMER_30HZ, NULL);
-		break;
-	default:
-		break;
 	}
-	m_curTimerID = nSel;
+	else if (strIntervalValue == HZ2){
+		recv.SetFrequency(HZ_2);
+	}
+	else if (strIntervalValue == HZ3){
+		recv.SetFrequency(HZ_3);
+	}
+	else if (strIntervalValue == HZ5){
+		recv.SetFrequency(HZ_5);
+	}
+	else if (strIntervalValue == HZ10){
+		recv.SetFrequency(HZ_10);
+	}
+	else if (strIntervalValue == HZ20){
+		recv.SetFrequency(HZ_20);
+	}else{
+		recv.SetFrequency(HZ_30);
+	}
+	recv.Send();
 }
 
-
+//选择预测算法改变的类
 void CTempretureForecastDlg::OnCbnSelchangeComboForecastalg()
 {
 	// TODO:  在此添加控件通知处理程序代码
@@ -363,13 +340,18 @@ void CTempretureForecastDlg::OnCbnSelchangeComboForecastalg()
 	int nSel;
 	nSel = m_forecastAlgorithm.GetCurSel();
 	m_forecastAlgorithm.GetLBText(nSel, strAlgValue);
-	AfxMessageBox(strAlgValue);
+
+	if (strAlgValue == _T("直线拟合")){
+
+	}
+	else{
+
+	}
 }
 
 
 DWORD WINAPI CTempretureForecastDlg::DataReceiveProc(LPVOID lpParameter)
 {
-	
 	return 0;
 }
 
@@ -383,11 +365,42 @@ DWORD WINAPI CTempretureForecastDlg::DataReceiveInitProc(LPVOID lpParameter)
 }
 void CTempretureForecastDlg::UpDateTempView(CTempData *data)
 {
-	// TODO:  在此添加消息处理程序代码和/或调用默认值  
-	//CTempData data;
-	//GetLocalTime(&data.m_date);
-	//data.m_tempreture = rand() % 50 + 1;
+	//采集的温度数据总数
+	datanum++;
+	//选择容器，将采集的温度插入到容器中
+	if (buffswitch == 1){
+		if (datanum % MAX_VEC_SIZE == 0){
+			//创建一个线程进行将缓存容器II中的数据保存到文件中
+			HANDLE hThread = CreateThread(NULL, 0, FileWriteProc, (LPVOID)this, 0, NULL);
+			CloseHandle(hThread);
+			m_DataVecBuffI.push_back(data);
+		}
+		else
+		{
+			m_DataVecBuffII.push_back(data);
+		}
+
+	}
+	if (buffswitch == 0)
+	{
+		if (datanum % MAX_VEC_SIZE == 0)
+		{
+			//创建一个线程进行将缓存容器I中的数据保存到文件中
+			HANDLE hThread = CreateThread(NULL, 0, FileWriteProc, (LPVOID)this, 0, NULL);
+			CloseHandle(hThread);
+			m_DataVecBuffII.push_back(data);
+		}
+		else
+		{
+			m_DataVecBuffI.push_back(data);
+		}
+	}
+	//插入温度数据
 	m_displayer.AddData(*data);
+	//添加预测的温度数据
+	CurvePredict* dict = new CurvePredict();
+	
+	m_displayer.AddForecastData(dict->GetCoefficient(m_displayer.m_tempData));
 	//绘制坐标系
 	m_displayer.DrawCoordinate(&m_memDC, m_rect);
 	// 绘制波形图   
@@ -403,9 +416,87 @@ void CTempretureForecastDlg::UpDateTempView(CTempData *data)
 	m_curTemp.Format(_T("%.0lf ℃"), data->m_temperature);
 	//将缓冲DC画到实际的窗口上
 	m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
-	//if (data.m_tempreture>=m_alarmValue)
-	//AfxMessageBox(_T("高温警报！！"));
+	if (data->m_temperature >= m_alarmValue&&isplay == false)
+	{
+		HANDLE hThread = CreateThread(NULL, 0, PlayProc, (LPVOID)this, 0, NULL);
+		CloseHandle(hThread);
+	}
 	Invalidate(false);
-	//UpdateWindow(false);
-	//UpdateData(FALSE);
+}
+
+DWORD WINAPI CTempretureForecastDlg::FileWriteProc(LPVOID lpParameter)
+{
+	CTempretureForecastDlg * pTaskMain = (CTempretureForecastDlg *)lpParameter;   //把this指针传进来
+	SYSTEMTIME sys;
+	GetLocalTime(&sys);
+	if (pTaskMain->buffswitch == 0){
+		CFileImpl impl;
+		//将缓存容器I的数据插入到文件中
+		impl.WriteTempreturetoFile(pTaskMain->m_DataVecBuffI);
+		//切换容器
+		pTaskMain->buffswitch++;
+		pTaskMain->m_DataVecBuffI.clear();
+		return 0;
+	}
+	else{
+		CFileImpl impl;
+		impl.WriteTempreturetoFile(pTaskMain->m_DataVecBuffII);
+		pTaskMain->buffswitch--;
+		pTaskMain->m_DataVecBuffII.clear();
+		return 0;
+	}
+	return 0;
+}
+
+
+void CTempretureForecastDlg::OnBnClickedImportbtn()
+{
+	CString FilePathName;
+	CFileDialog dlg(TRUE, //TRUE为OPEN对话框，FALSE为SAVE AS对话框
+		NULL,
+		NULL,
+		OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		(LPCTSTR)_TEXT("All Files (*.*)|*.*||"),
+		NULL);
+	if (dlg.DoModal() == IDOK)
+	{
+		FilePathName = dlg.GetPathName(); //文件名保存在了FilePathName里
+		filepath = CEncodingUtil::CStringToString(FilePathName);
+		HANDLE hThread = CreateThread(NULL, 0, SQLWriteProc, (LPVOID)this, 0, NULL);
+		CloseHandle(hThread);
+	}
+	else
+	{
+		return;
+	}
+}
+DWORD WINAPI CTempretureForecastDlg::SQLWriteProc(LPVOID lpParameter)
+{
+	CTempretureForecastDlg * pTaskMain = (CTempretureForecastDlg *)lpParameter;   //把this指针传进来
+	
+	CFileImpl fileimpl;
+	vector<CTempData*> pdata = fileimpl.ReadTempretureFromFile(pTaskMain->filepath);
+	CTempretureImpl impl;
+	impl.InsertDataToMySql(pdata);
+	AfxMessageBox(_T("导入到数据库成功"));
+	return 0;
+}
+
+void CTempretureForecastDlg::PlayWav()
+{
+	HMODULE   hmod = AfxGetResourceHandle();
+	HRSRC   hSndResource = FindResource(hmod, MAKEINTRESOURCE(IDR_WAVE1), _T("WAVE"));
+	HGLOBAL   hGlobalMem = LoadResource(hmod, hSndResource);
+	LPCTSTR   lpMemSound = (LPCTSTR)LockResource(hGlobalMem);
+	sndPlaySound(lpMemSound, SND_MEMORY);
+	FreeResource(hGlobalMem);
+}
+
+DWORD WINAPI CTempretureForecastDlg::PlayProc(LPVOID lpParameter)
+{
+	CTempretureForecastDlg * pTaskMain = (CTempretureForecastDlg *)lpParameter;   //把this指针传进来
+	pTaskMain->isplay = true;
+	pTaskMain->PlayWav();
+	pTaskMain->isplay = false;
+	return 0;
 }
