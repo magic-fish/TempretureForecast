@@ -34,9 +34,10 @@ CString CTempData::GetTime()
 
 
 // ·µ»Ø×Ö·û´®
-CString CTempData::Tostring()
+string CTempData::ToData()
 {
-	CString data;
-	data.Format(_T("%02d:%02d:%02d.%3d  %lf\n"), m_date.wHour, m_date.wMinute, m_date.wSecond, m_date.wMilliseconds, m_temperature);
+	char data[MAX_SIZE];
+	sprintf_s(data, "%02d:%02d:%02d:%3d:%lf", m_date.wHour, m_date.wMinute, m_date.wSecond, m_date.wMilliseconds, m_temperature);
+	string str = data;
 	return data;
 }
