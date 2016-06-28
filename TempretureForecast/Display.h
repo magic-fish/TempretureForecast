@@ -23,6 +23,7 @@ public:
 	vector<CTempData>m_forecastData; //预测数据
 	CRect m_codRect;  //坐标系矩形
 	void AddData(CTempData data);    //录入数据
+	void AddForecastData(vector<CTempData>p_forcaseData);//录入预测数据forcaseData
 	// 获得最高温度和最低温度
 	void GetMinAndMaxTemp(int minTemp, int maxTemp);
 	CPen blackPen;      // 用于创建黑色画笔   画坐标轴
@@ -31,7 +32,8 @@ public:
 	CPen redPen;        // 用于创建红色画笔   画预警线
 	CPen greenPen;      // 用于创建绿色画笔   画实际温度曲线
 	CPen brownPen;      // 用于创建褐色画笔   画预测温度曲线
-	CPen *pOldPen;      // 用于存放旧画笔   
+	CPen *pOldPen;      // 用于存放旧画笔  
+	CBrush redBrush;	
 	int SetMaxAndMinTemp();
 	int GetMaxTemp();
 	int GetMinTemp();
