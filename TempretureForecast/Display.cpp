@@ -90,17 +90,7 @@ void CDisplay::DrawCoordinate(CDC *pDC,CRect rect)
 	pDC->SelectObject(&bluePen);
 	pDC->MoveTo(m_codRect.left + xavlength, m_codRect.bottom);
 	pDC->LineTo(m_codRect.left + xavlength, m_codRect.top);
-	//显示连续两个小时的温度，前一个小时是采集到的，后一个小时是预测的
-	/*for (int i = 0; i <2; i++)
-	{
-		//CString strTime = this->GetCurTime();
-		//strTime = strTime.Mid(strTime.GetLength() - 3, 2);
-		//int intTime = _ttoi(strTime) + i;
-		CString strTime;
-		strTime.Format(_T("%d"), i);
-		pDC->TextOutW(codrect.left + i*xavlength, codrect.bottom + 10, strTime);
-	}
-	*/
+
 	SYSTEMTIME time;
 	GetLocalTime(&time);
 	CString strTime;

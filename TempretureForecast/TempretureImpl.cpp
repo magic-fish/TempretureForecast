@@ -40,3 +40,14 @@ void CTempretureImpl::InsertDataToMySql(CTempData* temp)
 	db->CommitTrans();
 
 }
+
+
+vector<CTempData*> CTempretureImpl::Read(string sql)
+{
+	vector<CTempData*> pdata ;
+	return pdata;
+}
+void CTempretureImpl::Write(vector<CTempData*> pTemp)
+{
+	InsertDataToMySql(pTemp);
+}

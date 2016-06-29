@@ -13,6 +13,7 @@
 #include <string>
 #include "EncodingUtil.h"
 #include "TempretureImpl.h"
+#include "SourceWRFactory.h"
 using namespace std;
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -64,6 +65,7 @@ CTempretureForecastDlg::CTempretureForecastDlg(CWnd* pParent /*=NULL*/)
 	buffswitch = 0;
 	m_alarmValue = 50;
 	isplay = false;
+	m_Algorithm = CAlgorithmFactory::CreateAlgorithm("直线拟合");
 }
 
 void CTempretureForecastDlg::DoDataExchange(CDataExchange* pDX)
@@ -198,18 +200,20 @@ HCURSOR CTempretureForecastDlg::OnQueryDragIcon()
 
 void CTempretureForecastDlg::OnTimer(UINT_PTR nIDEvent)
 {
+	// 显示当前的最高温度和最低温度
+	m_numOfTemp = POINT_COUNT;
+	//GetMaxAndMinTemp();
+	m_MaxTemp = m_displayer.GetMaxTemp();
+	m_MinTemp = m_displayer.GetMinTemp();
+	// 显示当前时间和实时温度
+	m_date = GetCurTime();
+	CTempData pTempdata = m_displayer.m_tempData[m_displayer.m_tempData.size()-1];
+	m_curTime.Format(_T("%02d:%02d:%02d"), pTempdata.m_date.wHour, pTempdata.m_date.wMinute, pTempdata.m_date.wSecond);
+	m_curTemp.Format(_T("%.0lf ℃"), pTempdata.m_temperature);
 	UpdateData(FALSE);
 	CDialogEx::OnTimer(nIDEvent);
 }
 
-
-// 获得当前时间段的最高温度和最低温度
-void CTempretureForecastDlg::GetMaxAndMinTemp()
-{
-	//CAlgorithm alg;
-	//m_MaxTemp = alg.GetMax(m_numOfTemp, m_waveDataValues);
-	//m_MinTemp = alg.GetMin(m_numOfTemp, m_waveDataValues);
-}
 
 
 void CTempretureForecastDlg::OnClose()
@@ -217,20 +221,27 @@ void CTempretureForecastDlg::OnClose()
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 	
 	if (buffswitch == 0){
-		CFileImpl impl;
+		CDataStorage *pDataStorage = CSourceWRFactory::CreateSourceWR(FILE_WR);
 		//将缓存容器I的数据插入到文件中
-		impl.WriteTempreturetoFile(m_DataVecBuffI);
+		pDataStorage->Write(m_DataVecBuffI);
 		//切换容器
 		m_DataVecBuffI.clear();
+		delete pDataStorage;
+		pDataStorage = NULL;
 	}
 	else{
-		CFileImpl impl;
-		impl.WriteTempreturetoFile(m_DataVecBuffII);
+		CDataStorage *pDataStorage = CSourceWRFactory::CreateSourceWR(FILE_WR);
+		//将缓存容器II的数据插入到文件中
+		pDataStorage->Write(m_DataVecBuffII);
+
 		m_DataVecBuffII.clear();
+		delete pDataStorage;
+		pDataStorage = NULL;
 	}
 	m_memDC.DeleteDC();        //删除DC
 	m_bmp.DeleteObject();      //删除位图
 	KillTimer(m_curTimerID);
+	recv.End();
 	CDialogEx::OnClose();
 }
 
@@ -289,15 +300,11 @@ void CTempretureForecastDlg::OnCbnSelchangeComboAlarm()
 {
 	// TODO:  在此添加控件通知处理程序代码
 	CString strAlarmValue;
-	int nSel;
-
 	// 获取组合框控件的列表框中选中项的索引   
-	nSel = m_highTempAlarm.GetCurSel();
+	int nSel = m_highTempAlarm.GetCurSel();
 	// 根据选中项索引获取该项字符串   
 	m_highTempAlarm.GetLBText(nSel, strAlarmValue);
 	// 将组合框中选中的字符串显示到IDC_SEL_WEB_EDIT编辑框中
-
-	//PlayWav();
 	m_alarmValue = nSel + 10;
 }
 
@@ -305,8 +312,7 @@ void CTempretureForecastDlg::OnCbnSelchangeComboAlarm()
 void CTempretureForecastDlg::OnCbnSelchangeComboCollectinterval()
 {
 	CString strIntervalValue;
-	int nSel;
-	nSel = m_collectInterval.GetCurSel();
+	int nSel = m_collectInterval.GetCurSel();
 	
 	m_collectInterval.GetLBText(nSel, strIntervalValue);
 	if (strIntervalValue == HZ1){
@@ -337,23 +343,19 @@ void CTempretureForecastDlg::OnCbnSelchangeComboForecastalg()
 {
 	// TODO:  在此添加控件通知处理程序代码
 	CString strAlgValue;
-	int nSel;
-	nSel = m_forecastAlgorithm.GetCurSel();
+	int nSel = m_forecastAlgorithm.GetCurSel();
 	m_forecastAlgorithm.GetLBText(nSel, strAlgValue);
+	delete m_Algorithm;
 
 	if (strAlgValue == _T("直线拟合")){
-
+		m_Algorithm = CAlgorithmFactory::CreateAlgorithm(CEncodingUtil::CStringToString(strAlgValue));
 	}
-	else{
-
+	
+	if (strAlgValue == _T("曲线拟合")){
+		m_Algorithm = CAlgorithmFactory::CreateAlgorithm(CEncodingUtil::CStringToString(strAlgValue));
 	}
 }
 
-
-DWORD WINAPI CTempretureForecastDlg::DataReceiveProc(LPVOID lpParameter)
-{
-	return 0;
-}
 
 DWORD WINAPI CTempretureForecastDlg::DataReceiveInitProc(LPVOID lpParameter)
 {
@@ -363,7 +365,7 @@ DWORD WINAPI CTempretureForecastDlg::DataReceiveInitProc(LPVOID lpParameter)
 	pTaskMain->recv.SetFrequency("1");
 	return 0;
 }
-void CTempretureForecastDlg::UpDateTempView(CTempData *data)
+void CTempretureForecastDlg::UpDateTempView(CTempData* data)
 {
 	//采集的温度数据总数
 	datanum++;
@@ -373,12 +375,8 @@ void CTempretureForecastDlg::UpDateTempView(CTempData *data)
 			//创建一个线程进行将缓存容器II中的数据保存到文件中
 			HANDLE hThread = CreateThread(NULL, 0, FileWriteProc, (LPVOID)this, 0, NULL);
 			CloseHandle(hThread);
-			m_DataVecBuffI.push_back(data);
 		}
-		else
-		{
-			m_DataVecBuffII.push_back(data);
-		}
+		m_DataVecBuffII.push_back(data);
 
 	}
 	if (buffswitch == 0)
@@ -388,36 +386,23 @@ void CTempretureForecastDlg::UpDateTempView(CTempData *data)
 			//创建一个线程进行将缓存容器I中的数据保存到文件中
 			HANDLE hThread = CreateThread(NULL, 0, FileWriteProc, (LPVOID)this, 0, NULL);
 			CloseHandle(hThread);
-			m_DataVecBuffII.push_back(data);
+			//m_DataVecBuffII.push_back(data);
 		}
-		else
-		{
-			m_DataVecBuffI.push_back(data);
-		}
+		m_DataVecBuffI.push_back(data);
 	}
 	//插入温度数据
 	m_displayer.AddData(*data);
 	//添加预测的温度数据
-	CurvePredict* dict = new CurvePredict();
-	
-	m_displayer.AddForecastData(dict->GetCoefficient(m_displayer.m_tempData));
+	m_displayer.AddForecastData(m_Algorithm->GetForecastData(m_displayer.m_tempData));
 	//绘制坐标系
 	m_displayer.DrawCoordinate(&m_memDC, m_rect);
 	// 绘制波形图   
 	m_displayer.DrawGraph(&m_memDC);
-	// 显示当前的最高温度和最低温度
-	m_numOfTemp = POINT_COUNT;
-	//GetMaxAndMinTemp();
-	m_MaxTemp = m_displayer.GetMaxTemp();
-	m_MinTemp = m_displayer.GetMinTemp();
-	// 显示当前时间和实时温度
-	m_date = GetCurTime();
-	m_curTime.Format(_T("%02d:%02d:%02d"), data->m_date.wHour, data->m_date.wMinute, data->m_date.wSecond);
-	m_curTemp.Format(_T("%.0lf ℃"), data->m_temperature);
 	//将缓冲DC画到实际的窗口上
 	m_bgPic.GetDC()->BitBlt(0, 0, m_rect.Width(), m_rect.Height(), &m_memDC, 0, 0, SRCCOPY);
 	if (data->m_temperature >= m_alarmValue&&isplay == false)
 	{
+		//播放预警声音线程
 		HANDLE hThread = CreateThread(NULL, 0, PlayProc, (LPVOID)this, 0, NULL);
 		CloseHandle(hThread);
 	}
@@ -429,20 +414,27 @@ DWORD WINAPI CTempretureForecastDlg::FileWriteProc(LPVOID lpParameter)
 	CTempretureForecastDlg * pTaskMain = (CTempretureForecastDlg *)lpParameter;   //把this指针传进来
 	SYSTEMTIME sys;
 	GetLocalTime(&sys);
-	if (pTaskMain->buffswitch == 0){
-		CFileImpl impl;
+	if (pTaskMain->buffswitch == 0)
+	{
 		//将缓存容器I的数据插入到文件中
-		impl.WriteTempreturetoFile(pTaskMain->m_DataVecBuffI);
+		CDataStorage *pDataStorage = CSourceWRFactory::CreateSourceWR(FILE_WR);
+		pDataStorage->Write(pTaskMain->m_DataVecBuffI);
+		pTaskMain->CleanBuff();
 		//切换容器
 		pTaskMain->buffswitch++;
-		pTaskMain->m_DataVecBuffI.clear();
+
+		delete pDataStorage;
+		pDataStorage = NULL;
 		return 0;
 	}
 	else{
-		CFileImpl impl;
-		impl.WriteTempreturetoFile(pTaskMain->m_DataVecBuffII);
+		CDataStorage *pDataStorage = CSourceWRFactory::CreateSourceWR(FILE_WR);
+		pDataStorage->Write(pTaskMain->m_DataVecBuffII);
+		pTaskMain->CleanBuff();
 		pTaskMain->buffswitch--;
-		pTaskMain->m_DataVecBuffII.clear();
+
+		delete pDataStorage;
+		pDataStorage = NULL;
 		return 0;
 	}
 	return 0;
@@ -465,19 +457,21 @@ void CTempretureForecastDlg::OnBnClickedImportbtn()
 		HANDLE hThread = CreateThread(NULL, 0, SQLWriteProc, (LPVOID)this, 0, NULL);
 		CloseHandle(hThread);
 	}
-	else
-	{
-		return;
-	}
 }
 DWORD WINAPI CTempretureForecastDlg::SQLWriteProc(LPVOID lpParameter)
 {
 	CTempretureForecastDlg * pTaskMain = (CTempretureForecastDlg *)lpParameter;   //把this指针传进来
-	
-	CFileImpl fileimpl;
-	vector<CTempData*> pdata = fileimpl.ReadTempretureFromFile(pTaskMain->filepath);
-	CTempretureImpl impl;
-	impl.InsertDataToMySql(pdata);
+	CDataStorage *pDataStorageFile = CSourceWRFactory::CreateSourceWR(FILE_WR);
+	vector<CTempData*> pdata = pDataStorageFile->Read(pTaskMain->filepath);
+
+	delete pDataStorageFile;
+	pDataStorageFile = NULL;
+	CDataStorage *pDataStorageSql= CSourceWRFactory::CreateSourceWR(MYSQL_WR);
+
+	pDataStorageSql->Write(pdata);
+
+	delete pDataStorageSql;
+	pDataStorageSql = NULL;
 	AfxMessageBox(_T("导入到数据库成功"));
 	return 0;
 }
@@ -499,4 +493,30 @@ DWORD WINAPI CTempretureForecastDlg::PlayProc(LPVOID lpParameter)
 	pTaskMain->PlayWav();
 	pTaskMain->isplay = false;
 	return 0;
+}
+
+void CTempretureForecastDlg::CleanBuff()
+{
+	if (buffswitch == 0)
+	{
+		for (int i = 0; i < m_DataVecBuffI.size(); i++){
+			CTempData* pdata = m_DataVecBuffI.at(i);
+			delete pdata;
+			pdata = NULL;
+		
+		}
+
+		m_DataVecBuffI.clear();
+		
+	}
+	else{
+
+		for (int i = 0; i < m_DataVecBuffII.size(); i++){
+			CTempData* pdata = m_DataVecBuffII.at(i);
+			delete pdata;
+			pdata = NULL;
+		}
+		m_DataVecBuffII.clear();
+
+	}
 }

@@ -22,6 +22,7 @@ void CurvePredict::Calculate(vector<CTempData> tempDatas)
 		vy.push_back(tempDatas[i].m_temperature);
 	}
 	EMatrix(vx, vy, tempDatas.size(), EX_SIZE, coefficient);
+	m_coefficient.clear();
 	m_coefficient.push_back(coefficient[3]);
 	m_coefficient.push_back(coefficient[2]);
 	m_coefficient.push_back(coefficient[1]);
@@ -110,9 +111,9 @@ double CurvePredict::EmMul(double c[], int l, int m)
 	return sum;
 }
 
-vector<CTempData> CurvePredict::GetCoefficient(vector<CTempData> tempDatas)
+vector<CTempData> CurvePredict::GetForecastData(vector<CTempData> tempDatas)
 {
-	Calculate(tempDatas);
+	CurvePredict::Calculate(tempDatas);
 	vector<CTempData>pVec;  
 	for (int i = 0; i < tempDatas.size(); i++)
 	{
