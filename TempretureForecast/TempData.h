@@ -12,17 +12,13 @@ class CTempData
 public:
 	CTempData();
 	~CTempData();
-	// 温度
-	double m_temperature;
-	// 时间
-	SYSTEMTIME m_date;
+
+	double m_temperature;									// 温度
+	SYSTEMTIME m_date;										// 时间
 
 	CTempData(double temperature, SYSTEMTIME date);
-	//返回温度的字符串
-	CString GetTemperature();
-	//返回时间的字符串
-	CString GetTime();
-	// 返回字符串
-	string ToData();
+	CString GetTemperature();								//返回温度的字符串
+	CString GetTime();									    //返回时间的字符串
+	string ToData();										// 返回字符串
 };
 

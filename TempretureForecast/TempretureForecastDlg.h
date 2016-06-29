@@ -8,6 +8,8 @@
 #include "resource.h"
 #include "DataReceive.h"
 #include "mmsystem.h"//导入声音头文件
+#include "PredictAlgorithm.h"
+#include "AlgorithmFactory.h"
 #pragma comment(lib,"winmm.lib")//导入声音头文件库
 #define POINT_COUNT 48
 
@@ -36,7 +38,8 @@
 #define HZ3  "3Hz"
 #define HZ2  "2Hz"
 #define HZ1  "1Hz"
-
+#define FILE_WR "File"
+#define MYSQL_WR "Mysql"
 #define TIMER_1S 0
 #define MAX_VEC_SIZE 50
 class DataReceive;
@@ -59,20 +62,20 @@ public:
 	CDC m_memDC;          //内存DC
 	CBitmap m_bmp;        //缓存位图
 	CRect m_rect;         //矩形客户区
-	//CDataSave m_optData;//数据操作对象
 	int m_alarmValue;     //警报值
 	int m_MaxTemp;        //最高温度
 	int m_MinTemp;        //最低温度
 	int m_numOfTemp;      //温度数据数量
-	CDisplay m_displayer;   //图像显示	
+	CDisplay m_displayer; //图像显示	
 	int m_curTimerID;     //当前的定时器ID
-	DataReceive recv;
-	string filepath;	  //选择的文件路径
-	static DWORD WINAPI DataReceiveProc(LPVOID lpParameter);
-	static DWORD WINAPI DataReceiveInitProc(LPVOID lpParameter);
-	static DWORD WINAPI FileWriteProc(LPVOID lpParameter);
-	static DWORD WINAPI SQLWriteProc(LPVOID lpParameter);
-	static DWORD WINAPI PlayProc(LPVOID lpParameter);
+	DataReceive recv;	  //Tcp数据连接								
+	CPredictAlgorithm* m_Algorithm;									//预测算法变量
+	string filepath;												//选择的文件路径
+
+	static DWORD WINAPI DataReceiveInitProc(LPVOID lpParameter);	//更新采集频率线程函数
+	static DWORD WINAPI FileWriteProc(LPVOID lpParameter);			//采集数据写入文件的线程函数
+	static DWORD WINAPI SQLWriteProc(LPVOID lpParameter);			//从文件中获取数据导入到数据库中
+	static DWORD WINAPI PlayProc(LPVOID lpParameter);				//播放音乐的线程
 // 实现
 protected:
 	HICON m_hIcon;
@@ -85,38 +88,31 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-private:
-	// 获得当前时间段的最高温度和最低温度
-	void GetMaxAndMinTemp();
-
 	
 public:
 	afx_msg void OnClose();
-	//获得当前时间
-	CString GetCurTime();
-	CString GetCurTemp(int currTemp);
-	void InitComboBox();
-	// 高温警报
-	CComboBox m_highTempAlarm; 
 	afx_msg void OnCbnSelchangeComboAlarm();
-	// 数据采集时间间隔
-	CComboBox m_collectInterval;
-	afx_msg void OnCbnSelchangeComboCollectinterval();
-	// 预测算法
-	CComboBox m_forecastAlgorithm;
 	afx_msg void OnCbnSelchangeComboForecastalg();
-	// 实时温度
-	CString m_curTemp;
-	//温度的数据容器
-	vector<CTempData*> m_DataVecBuffI;
-	vector<CTempData*> m_DataVecBuffII;
-	int  buffswitch;
-	int  datanum;
-	void UpDateTempView(CTempData * data);
-	afx_msg void OnBnClickedImportbtn();
-	//播放报警声音
-	void PlayWav();
-	//
-	bool isplay;
+	afx_msg void OnCbnSelchangeComboCollectinterval();
+	afx_msg void OnBnClickedImportbtn();				//导入文件数据到数据库中
+
+	CString GetCurTime();							    //获得当前时间
+	CString GetCurTemp(int currTemp);
+	void InitComboBox();								//初始化Combox
+
+	CComboBox m_highTempAlarm;						    // 高温警报控件
+	CComboBox m_collectInterval;						// 数据采集时间间隔控件
 	
+	CComboBox m_forecastAlgorithm;						// 预测算法
+	CString m_curTemp;									// 实时温度
+
+	vector<CTempData*> m_DataVecBuffI;					//温度的采集数据容器I
+	vector<CTempData*> m_DataVecBuffII;					//温度的采集数据容器II
+	int  buffswitch;									//容器切换的开关
+	int  datanum;
+	void UpDateTempView(CTempData* data);				//实时采集数据更新界面
+
+	void PlayWav();									    // 播放报警声音
+	bool isplay;										//当前是否正在播放报警声音
+	void CleanBuff();									//清理存入数据库后的缓存区
 };

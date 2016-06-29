@@ -27,13 +27,7 @@ string CEncodingUtil::CStringToString(CString str){
 	return stringstr;
 }
 
-int CEncodingUtil::StringToInt(string str)
-{
-	char* end;
-	int i = static_cast<int>(strtol(str.c_str(), &end, 16));
-	return i;
-}
-double CEncodingUtil::StringToDouble(string str)
+double CEncodingUtil::StringToNum(string str)
 {
 	cout << str << endl;
 

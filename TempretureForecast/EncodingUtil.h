@@ -10,6 +10,9 @@ Type stringToNum(const string& str)
 	iss >> num;
 	return num;
 }
+/*
+*	字符编码转换类
+*/
 class CEncodingUtil
 {
 private:
@@ -17,9 +20,8 @@ private:
 public:
 	CEncodingUtil();
 	~CEncodingUtil();
-	static const char * CStringToChar(CString str);
-	static string CStringToString(CString str);
-	static int StringToInt(string str);
-	static double StringToDouble(string str);
+	static const char * CStringToChar(CString str);			//将CString 转换为Char*
+	static string CStringToString(CString str);				//将CString 转换为string
+	static double StringToNum(string str);					//将CString 转换为数字
 };
 

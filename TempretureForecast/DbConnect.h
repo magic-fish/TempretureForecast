@@ -2,6 +2,9 @@
 #include "afxdb.h"
 #include <mysql.h>
 #pragma comment(lib, "libmysql.lib")
+/*
+ *数据库连接
+ */
 class CDbConnect
 {
 public:
@@ -15,7 +18,5 @@ private:
 public:
 	int connect();
 	CDatabase* getDatabase();
-
-
 };
 

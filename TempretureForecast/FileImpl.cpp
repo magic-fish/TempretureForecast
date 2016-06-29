@@ -53,14 +53,23 @@ vector<CTempData*> CFileImpl::ReadTempretureFromFile(string filePath)
 			vector<string> str =  CStringSplitUtil::split(message, pattern);
 
 			CTempData* data = new CTempData();
-			data->m_date.wHour = CEncodingUtil::StringToInt(str[0]);
-			data->m_date.wMinute = CEncodingUtil::StringToInt(str[1]);
-			data->m_date.wSecond = CEncodingUtil::StringToInt(str[2]);
-			data->m_date.wMilliseconds = CEncodingUtil::StringToInt(str[3]);
-			data->m_temperature = CEncodingUtil::StringToDouble(str[4]);
+			data->m_date.wHour = CEncodingUtil::StringToNum(str[0]);
+			data->m_date.wMinute = CEncodingUtil::StringToNum(str[1]);
+			data->m_date.wSecond = CEncodingUtil::StringToNum(str[2]);
+			data->m_date.wMilliseconds = CEncodingUtil::StringToNum(str[3]);
+			data->m_temperature = CEncodingUtil::StringToNum(str[4]);
 			pData.push_back(data);
 		}
 		infile.close();
 	}
 	return pData;
+}
+
+vector<CTempData*> CFileImpl::Read(string str)
+{
+	return ReadTempretureFromFile(str);
+}
+void CFileImpl::Write(vector<CTempData*> pTemp)
+{
+	WriteTempreturetoFile(pTemp);
 }

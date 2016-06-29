@@ -103,14 +103,18 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AlgorithmFactory.h" />
     <ClInclude Include="CurvePredict.h" />
     <ClInclude Include="DataReceive.h" />
+    <ClInclude Include="DataStorage.h" />
     <ClInclude Include="DbConnect.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="EncodingUtil.h" />
     <ClInclude Include="FileImpl.h" />
     <ClInclude Include="LinearPredict.h" />
+    <ClInclude Include="PredictAlgorithm.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SourceWRFactory.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StringSplitUtil.h" />
     <ClInclude Include="targetver.h" />
@@ -120,13 +124,17 @@
     <ClInclude Include="TempretureImpl.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AlgorithmFactory.cpp" />
     <ClCompile Include="CurvePredict.cpp" />
     <ClCompile Include="DataReceive.cpp" />
+    <ClCompile Include="DataStorage.cpp" />
     <ClCompile Include="DbConnect.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="EncodingUtil.cpp" />
     <ClCompile Include="FileImpl.cpp" />
     <ClCompile Include="LinearPredict.cpp" />
+    <ClCompile Include="PredictAlgorithm.cpp" />
+    <ClCompile Include="SourceWRFactory.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
